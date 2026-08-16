@@ -2,7 +2,7 @@
   "name": "J.A.R.V.I.S. Master Brain",
   "short_name": "JARVIS",
   "description": "Personal AI assistant — master brain and tool orchestrator",
-  "start_url": "./JARVIS.html",
+  "start_url": "./JARVIS_fixed.html",
   "display": "standalone",
   "background_color": "#050810",
   "theme_color": "#050810",
