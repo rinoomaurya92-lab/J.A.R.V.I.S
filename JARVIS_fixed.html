@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J.A.R.V.I.S. — Master Brain</title>
+<style>
+:root{--bg:#050810;--panel:#0a141f;--panel2:#0d1a28;--line:#163240;--cyan:#55d9ff;--green:#72ffc9;--amber:#ffbf66;--red:#ff6868;--text:#d8ecf5;--muted:#6f899a}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -15%,#10283b 0,#050810 58%);color:var(--text);font:14px Inter,system-ui,sans-serif}
+body{display:flex;justify-content:center;padding:22px 14px 36px}.app{width:min(980px,100%)}
+header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.brand{font-size:26px;font-weight:800;letter-spacing:4px;color:#baf1ff;text-shadow:0 0 18px #55d9ff55}.sub{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:2px}
+.hbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+button,input,select,textarea{font:inherit;color:var(--text)}button{cursor:pointer}
+.icon{background:transparent;border:1px solid var(--line);border-radius:8px;padding:9px 11px}.icon:hover{border-color:#24607a}
+.icon.on{border-color:var(--cyan);color:var(--cyan)}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:18px;margin-top:18px}
+.panel{background:#07101a99;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 15px 60px #0005}
+.core{height:260px;display:grid;place-items:center;position:relative}.ring{position:absolute;border:1px solid #1f6883;border-radius:50%;animation:spin 14s linear infinite}.r1{width:230px;height:230px;border-style:dashed}.r2{width:180px;height:180px;border-color:#55d9ff88;animation-duration:8s;animation-direction:reverse}.r3{width:132px;height:132px;border-color:#55d9ff44;animation-duration:4s}
+@keyframes spin{to{transform:rotate(360deg)}}.corebtn{width:92px;height:92px;border-radius:50%;border:1px solid #3282a3;background:radial-gradient(circle at 40% 35%,#163b53,#061019 70%);box-shadow:0 0 34px #55d9ff22;color:var(--cyan);font-size:25px}.corebtn.active{box-shadow:0 0 42px #55d9ff66;border-color:var(--cyan);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.status{text-align:center;margin-top:-2px}.status b{letter-spacing:3px;font-size:13px}.caption{color:var(--muted);font-size:12px;margin-top:5px;min-height:15px}
+.log{height:480px;overflow:auto;display:flex;flex-direction:column;gap:10px}.msg{max-width:92%;padding:10px 12px;border-radius:10px;line-height:1.5;white-space:pre-wrap;font-size:13.5px}.u{align-self:flex-end;background:var(--panel2);border:1px solid var(--line)}.a{border:1px solid #24607a;color:#baf1ff}.s{align-self:center;color:var(--amber);font-size:11.5px;border:1px solid #604918;background:#1a1208}.t{align-self:center;color:#8fb8c9;font-size:11px;border:1px dashed #23495a;background:#0a1620;padding:6px 10px}
+.msg b.lbl{opacity:.55;font-weight:600;letter-spacing:.5px;font-size:10.5px;display:block;margin-bottom:3px}
+.composer{display:flex;gap:8px;margin-top:12px}.composer input{flex:1;background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:9px;outline:none}.composer input:focus{border-color:#2a7794}
+.send{background:var(--panel2);border:1px solid var(--line);padding:0 16px;border-radius:9px;color:var(--cyan)}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.card{border:1px solid var(--line);border-radius:10px;padding:11px;background:#09141f}.card h4{margin:0 0 5px;font-size:10.5px;letter-spacing:1.5px;color:var(--muted)}.pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;border:1px solid #27657a;color:var(--green)}
+.pill.warn{color:var(--amber);border-color:#5f4518}.pill.err{color:var(--red);border-color:#5a2323}.pill.idle{color:var(--muted);border-color:var(--line)}
+.tools{margin-top:12px}.tool{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #102634;padding:8px 0;font-size:12px}.tool:last-child{border-bottom:0}.tool span{color:var(--muted)}
+.warn{margin-top:12px;padding:10px;border:1px solid #5f4518;background:#1a1208;color:#ffd487;border-radius:9px;font-size:11.5px;line-height:1.45}
+.overlay{position:fixed;inset:0;background:#020508cc;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay.show{display:flex}
+.modal{width:min(560px,100%);max-height:86vh;overflow:auto;background:#0a141fee;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 20px 80px #000a}
+.modal h3{margin:0 0 12px;letter-spacing:2px;font-size:14px;color:#baf1ff}
+.modal h4{margin:16px 0 8px;font-size:11px;letter-spacing:1.5px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.field{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px;flex:1;min-width:0}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 13px;color:var(--cyan)}.btn:hover{border-color:#2a7794}
+.btn.danger{color:var(--red);border-color:#5a2323}
+.list-item{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12.5px}
+.list-item .rm{background:none;border:0;color:var(--red);cursor:pointer;font-size:14px}
+.mini{font-size:11px;color:var(--muted)}
+.confirmBar{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.log{height:420px}.core{height:230px}.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><div class="brand">J.A.R.V.I.S.</div><div class="sub">MASTER BRAIN • TOOL ORCHESTRATOR</div></div>
+  <div class="hbtns">
+    <button class="icon" id="speakBtn" title="Toggle voice replies">🔊 Voice</button>
+    <button class="icon" id="stopSpeak" title="Stop speaking">⏹ Stop</button>
+    <button class="icon" id="settingsBtn" title="Settings">⚙ Settings</button>
+  </div>
+</header>
+<div class="grid">
+<section class="panel">
+  <div class="core"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><button class="corebtn" id="core">◉</button></div>
+  <div class="status"><b id="status">STANDING BY</b><div class="caption" id="caption">One brain, many approved tools.</div></div>
+  <div class="cards">
+    <div class="card"><h4>BRAIN</h4><span class="pill" id="brain">READY</span></div>
+    <div class="card"><h4>MEMORY</h4><span class="pill" id="mem">LOADING</span></div>
+    <div class="card"><h4>TOOLS</h4><span class="pill" id="toolCount">— ENABLED</span></div>
+    <div class="card"><h4>SAFETY</h4><span class="pill">CONFIRM</span></div>
+    <div class="card"><h4>MIC</h4><span class="pill idle" id="micStatus">IDLE</span></div>
+    <div class="card"><h4>BACKEND</h4><span class="pill idle" id="backendStatus">UNKNOWN</span></div>
+  </div>
+  <div class="tools" id="toolList">
+    <div class="tool"><b>Calculator</b><span>local • safe</span></div>
+    <div class="tool"><b>Date / Time</b><span>local • safe</span></div>
+    <div class="tool"><b>Open website</b><span>browser • confirm</span></div>
+    <div class="tool"><b>Web search</b><span>browser • safe</span></div>
+    <div class="tool"><b>Maps / location</b><span>browser • confirm</span></div>
+    <div class="tool"><b>Weather</b><span>backend API • safe</span></div>
+    <div class="tool"><b>Notes</b><span>local memory • safe</span></div>
+    <div class="tool"><b>Custom commands</b><span>local • safe</span></div>
+    <div class="tool"><b>Voice input/output</b><span>browser • optional</span></div>
+  </div>
+  <div class="warn">A browser page cannot safely control the whole device. Powerful or irreversible actions (opening unfamiliar sites, sharing your location, wiping memory) always ask for confirmation first.</div>
+</section>
+<section class="panel">
+  <div id="log" class="log"><div class="msg s">SYSTEM: Master brain initialized. Say or type a command. Try "calculate 25*8", "weather in Delhi", "note: buy milk", or just talk to me.</div></div>
+  <div class="composer">
+    <input id="input" placeholder="Ask JARVIS… English, Hindi, or Hinglish" autocomplete="off">
+    <button class="send" id="send">SEND</button>
+  </div>
+</section>
+</div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h3>SETTINGS</h3>
+
+    <h4>BACKEND</h4>
+    <div class="row"><span class="mini" id="backendUrlDisplay" style="word-break:break-all;flex:1"></span></div>
+    <div class="row"><button class="btn" id="testBackendBtn">🔌 Test Backend</button><span class="mini" id="testBackendResult"></span></div>
+
+    <h4>LANGUAGE</h4>
+    <div class="row">
+      <select class="field" id="langSelect">
+        <option value="auto">Auto-detect (Hindi + English + Hinglish)</option>
+        <option value="en">English voice</option>
+        <option value="hi">Hindi voice</option>
+      </select>
+    </div>
+
+    <h4>YOUR NAME (optional, used for personalization)</h4>
+    <div class="row"><input class="field" id="userName" placeholder="e.g. Rohan"></div>
+
+    <h4>NOTES</h4>
+    <div id="notesList"></div>
+    <div class="row"><input class="field" id="noteInput" placeholder="Add a note…"><button class="btn" id="addNoteBtn">Add</button></div>
+
+    <h4>CUSTOM COMMANDS <span class="mini">(trigger → fixed reply, matched before AI)</span></h4>
+    <div id="cmdList"></div>
+    <div class="row"><input class="field" id="cmdTrigger" placeholder="trigger phrase"><input class="field" id="cmdResponse" placeholder="response"><button class="btn" id="addCmdBtn">Add</button></div>
+
+    <h4>MEMORY</h4>
+    <div class="row">
+      <button class="btn" id="exportBtn">⬇ Export memory</button>
+      <label class="btn" style="position:relative">⬆ Import memory<input type="file" id="importFile" accept="application/json" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
+    </div>
+    <div class="row"><button class="btn danger" id="wipeBtn">🗑 Clear ALL memory (irreversible)</button></div>
+
+    <div class="confirmBar"><button class="btn" id="closeSettings">Close</button></div>
+  </div>
+</div>
+
+<!-- GENERIC CONFIRM MODAL -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="width:min(420px,100%)">
+    <h3 id="confirmTitle">CONFIRM ACTION</h3>
+    <p id="confirmText" style="font-size:13px;color:var(--text)"></p>
+    <div class="confirmBar">
+      <button class="btn" id="confirmCancel">Cancel</button>
+      <button class="btn danger" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   J.A.R.V.I.S. FRONTEND
+   Backend URL below is your Google Apps Script Web App.
+   NO API KEYS LIVE IN THIS FILE — Gemini/Weather keys stay
+   server-side in Apps Script Script Properties.
+   ============================================================ */
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwqz9lK_EpJopX47IytoaUAbzkqOjD9bWAgswmFgUOG2Zrj268jilf6eJnVwrz9euxn/exec";
+
+(() => {
+  const $ = id => document.getElementById(id);
+  const log = $('log'), input = $('input');
+
+  /* ---------------- MEMORY (localStorage = long-term) ---------------- */
+  const MEM_KEY = 'jarvis_memory_v1';
+  const defaultMem = () => ({
+    prefs: { name: '', language: 'auto' },
+    notes: [],
+    customCommands: [
+      { trigger: 'who are you', response: "I am JARVIS — your master-brain assistant, orchestrating tools on your command." }
+    ],
+    history: [] // long-term conversational memory, capped
+  });
+  let mem = loadMem();
+  function loadMem(){
+    try{ const raw = localStorage.getItem(MEM_KEY); if(!raw) return defaultMem();
+      const parsed = JSON.parse(raw);
+      return Object.assign(defaultMem(), parsed);
+    }catch(e){ return defaultMem(); }
+  }
+  function saveMem(){
+    localStorage.setItem(MEM_KEY, JSON.stringify(mem));
+    $('mem').textContent = 'PERSISTED';
+  }
+  function pushHistory(role, content){
+    mem.history.push({role, content, t: Date.now()});
+    if(mem.history.length > 40) mem.history = mem.history.slice(-40);
+    saveMem();
+  }
+
+  /* ---------------- UI HELPERS ---------------- */
+  const add = (cls, label, text) => {
+    const d = document.createElement('div');
+    d.className = 'msg ' + cls;
+    if(label){ const b=document.createElement('b'); b.className='lbl'; b.textContent=label; d.appendChild(b); }
+    const body = document.createElement('div'); body.textContent = text; d.appendChild(body);
+    log.appendChild(d); log.scrollTop = log.scrollHeight;
+  };
+  const addTool = (text) => { const d=document.createElement('div'); d.className='msg t'; d.textContent='⚙ '+text; log.appendChild(d); log.scrollTop=log.scrollHeight; };
+  const setStatus = (s, c) => { $('status').textContent = s; $('caption').textContent = c; };
+
+  function renderNotes(){
+    const el = $('notesList'); el.innerHTML='';
+    if(mem.notes.length===0){ el.innerHTML = '<div class="mini">No notes yet.</div>'; }
+    mem.notes.forEach((n,i)=>{
+      const row = document.createElement('div'); row.className='list-item';
+      row.innerHTML = `<span>${escapeHtml(n)}</span>`;
+      const rm = document.createElement('button'); rm.className='rm'; rm.textContent='✕';
+      rm.onclick=()=>{ mem.notes.splice(i,1); saveMem(); renderNotes(); };
+      row.appendChild(rm); el.appendChild(row);
+    });
+  }
+  function renderCommands(){
+    const el = $('cmdList'); el.innerHTML='';
+    mem.customCommands.forEach((c,i)=>{
+      const row = document.createElement('div'); row.className='list-item';
+      row.innerHTML = `<span><b>${escapeHtml(c.trigger)}</b> → ${escapeHtml(c.response)}</span>`;
+      const rm = document.createElement('button'); rm.className='rm'; rm.textContent='✕';
+      rm.onclick=()=>{ mem.customCommands.splice(i,1); saveMem(); renderCommands(); };
+      row.appendChild(rm); el.appendChild(row);
+    });
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  /* ---------------- CONFIRM DIALOG (promise-based) ---------------- */
+  function confirmAction(title, text){
+    return new Promise(resolve=>{
+      $('confirmTitle').textContent = title;
+      $('confirmText').textContent = text;
+      $('confirmOverlay').classList.add('show');
+      const cleanup = (val)=>{ $('confirmOverlay').classList.remove('show'); $('confirmOk').onclick=null; $('confirmCancel').onclick=null; resolve(val); };
+      $('confirmOk').onclick = ()=>cleanup(true);
+      $('confirmCancel').onclick = ()=>cleanup(false);
+    });
+  }
+
+  /* ---------------- VOICE: TTS ---------------- */
+  let speaking = true;
+  function detectHindi(text){ return /[\u0900-\u097F]/.test(text); }
+  function pickVoice(text){
+    const voices = speechSynthesis.getVoices();
+    const wantHindi = mem.prefs.language === 'hi' || (mem.prefs.language==='auto' && detectHindi(text));
+    if(wantHindi){
+      return voices.find(v=>/hi-IN|hi_IN/i.test(v.lang)) || voices.find(v=>/^hi/i.test(v.lang));
+    }
+    return voices.find(v=>/en-IN/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang));
+  }
+  function say(text){
+    if(!speaking || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(text); if(v) u.voice = v;
+    u.lang = v ? v.lang : (detectHindi(text) ? 'hi-IN' : 'en-IN');
+    u.rate = .98; u.pitch = .95;
+    u.onstart = ()=> setStatus('SPEAKING', 'JARVIS is speaking…');
+    u.onend = ()=> setStatus('STANDING BY', 'One brain, many approved tools.');
+    speechSynthesis.speak(u);
+  }
+  $('stopSpeak').onclick = ()=>{ speechSynthesis.cancel(); setStatus('STANDING BY','Stopped speaking.'); };
+  if('speechSynthesis' in window) speechSynthesis.onvoiceschanged = ()=>{};
+
+  /* ---------------- VOICE: STT ---------------- */
+  $('core').onclick = ()=>{
+    const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!R){ input.focus(); addTool('Speech recognition not supported in this browser — use text input.'); return; }
+    const r = new R();
+    r.lang = mem.prefs.language==='hi' ? 'hi-IN' : (mem.prefs.language==='en' ? 'en-IN' : 'en-IN');
+    r.interimResults = false;
+    r.onstart = ()=>{ setStatus('LISTENING','Speak now…'); $('core').classList.add('active'); $('micStatus').textContent='LISTENING'; $('micStatus').className='pill'; };
+    r.onresult = e=> ask(e.results[0][0].transcript);
+    r.onerror = (e)=>{
+      setStatus('STANDING BY','Voice input unavailable.');
+      $('micStatus').textContent = e.error==='not-allowed' ? 'BLOCKED' : 'ERROR';
+      $('micStatus').className='pill err';
+      addTool('Microphone error: ' + e.error + (e.error==='not-allowed' ? ' — allow mic access in browser site settings.' : ''));
+    };
+    r.onend = ()=>{ $('core').classList.remove('active'); if($('status').textContent==='LISTENING') setStatus('STANDING BY','One brain, many approved tools.'); $('micStatus').textContent='IDLE'; $('micStatus').className='pill idle'; };
+    try{ r.start(); }catch(e){ addTool('Could not start microphone: '+e.message); }
+  };
+
+  /* ---------------- LOCAL TOOLS ---------------- */
+  function calc(expr){
+    if(!/^[0-9+\-*/().%\s]+$/.test(expr)) throw new Error('Only basic arithmetic is allowed.');
+    return Function('"use strict"; return (' + expr + ')')();
+  }
+
+  const APPROVED_DOMAINS = ['google.com','wikipedia.org','youtube.com','maps.google.com','openweathermap.org','github.com'];
+  async function openWebsite(rawUrl){
+    let u = rawUrl; if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    let host; try{ host = new URL(u).hostname.replace(/^www\./,''); }catch(e){ return 'That does not look like a valid address.'; }
+    const approved = APPROVED_DOMAINS.some(d=>host===d || host.endsWith('.'+d));
+    if(!approved){
+      const ok = await confirmAction('Open external website?', `JARVIS wants to open: ${u}\nThis domain is not on the approved list. Continue?`);
+      if(!ok) return 'Cancelled — site not opened.';
+    }
+    const win = window.open(u, '_blank', 'noopener');
+    return win ? ('Opened ' + u + '.') : ('Popup blocked — please allow popups for this site, then try again.');
+  }
+
+  function webSearch(query){
+    const win = window.open('https://www.google.com/search?q=' + encodeURIComponent(query), '_blank', 'noopener');
+    return win ? ('Searching the web for "' + query + '".') : 'Popup blocked — allow popups to run web searches.';
+  }
+
+  async function openMaps(query){
+    const ok = await confirmAction('Open Maps?', query ? `Open directions/search for "${query}" in Google Maps?` : 'Use your current location to open Google Maps nearby search? Your browser will ask for location permission.');
+    if(!ok) return 'Cancelled.';
+    if(query){
+      const win = window.open('https://www.google.com/maps/search/' + encodeURIComponent(query), '_blank', 'noopener');
+      return win ? ('Opened Maps for "' + query + '".') : 'Popup blocked.';
+    }
+    if(!navigator.geolocation) return 'Geolocation is not supported by this browser.';
+    return new Promise(resolve=>{
+      navigator.geolocation.getCurrentPosition(
+        pos=>{
+          const {latitude, longitude} = pos.coords;
+          const win = window.open(`https://www.google.com/maps/@${latitude},${longitude},15z`, '_blank', 'noopener');
+          resolve(win ? 'Opened Maps at your current location.' : 'Popup blocked.');
+        },
+        err=> resolve('Could not get your location: ' + err.message),
+        {timeout:8000}
+      );
+    });
+  }
+
+  function notesTool(text){
+    const addM = text.match(/^note[:\-]\s*(.+)/i) || text.match(/^add note\s+(.+)/i);
+    if(addM){ mem.notes.push(addM[1].trim()); saveMem(); renderNotes(); return 'Noted: "' + addM[1].trim() + '".'; }
+    if(/^(show|list|read) notes?$/i.test(text.trim())){
+      if(mem.notes.length===0) return 'You have no saved notes.';
+      return 'Your notes:\n' + mem.notes.map((n,i)=>(i+1)+'. '+n).join('\n');
+    }
+    if(/^clear notes$/i.test(text.trim())){ mem.notes=[]; saveMem(); renderNotes(); return 'All notes cleared.'; }
+    return null;
+  }
+
+  function matchCustomCommand(text){
+    const low = text.trim().toLowerCase();
+    const hit = mem.customCommands.find(c=>low === c.trigger.toLowerCase() || low.includes(c.trigger.toLowerCase()));
+    return hit ? hit.response : null;
+  }
+
+  async function weatherTool(city){
+    addTool('Calling Weather tool via backend for "'+city+'"…');
+    try{
+      const res = await backendCall({ action:'weather', city });
+      if(res.error) return 'Weather tool error: ' + res.error;
+      if(!res.temp && res.temp!==0) return 'Weather service returned an unexpected response.';
+      return `Weather in ${res.location||city}: ${res.temp}°C, ${res.description||''}. Feels like ${res.feels_like||res.temp}°C.`;
+    }catch(e){ return 'Could not reach the weather tool: ' + e.message; }
+  }
+
+  /* ---------------- BACKEND COMMUNICATION ---------------- */
+  // NOTE: Content-Type text/plain avoids CORS preflight, which Apps Script
+  // web apps cannot answer. The server still parses the body as JSON.
+  async function backendCall(payload){
+    const r = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const raw = await r.text();
+    let data;
+    try{ data = JSON.parse(raw); }
+    catch(e){ throw new Error('Invalid response from backend (not JSON). Raw: ' + raw.slice(0,200)); }
+    if(!r.ok){ throw new Error(data.error || ('Backend HTTP ' + r.status)); }
+    return data;
+  }
+
+  async function testBackend(){
+    $('testBackendResult').textContent = 'Testing…';
+    setBackendPill('idle','TESTING');
+    try{
+      const r = await fetch(BACKEND_URL + '?action=ping', { method:'GET' });
+      const raw = await r.text();
+      let data; try{ data = JSON.parse(raw); }catch(e){ throw new Error('Invalid JSON from server: ' + raw.slice(0,150)); }
+      if(data.error){ $('testBackendResult').textContent = '⚠ Backend error: ' + data.error; setBackendPill('err','BACKEND ERROR'); return; }
+      if(data.status === 'ok'){
+        const geminiNote = data.geminiKeyPresent ? '' : ' (⚠ GEMINI_API_KEY not set in Script Properties)';
+        $('testBackendResult').textContent = '✅ Connected' + geminiNote;
+        setBackendPill(data.geminiKeyPresent ? 'ok' : 'warn', data.geminiKeyPresent ? 'CONNECTED' : 'NO API KEY');
+        return;
+      }
+      $('testBackendResult').textContent = '⚠ Invalid response shape.';
+      setBackendPill('err','INVALID RESPONSE');
+    }catch(e){
+      $('testBackendResult').textContent = '❌ ' + e.message;
+      setBackendPill('err','OFFLINE');
+    }
+  }
+  function setBackendPill(kind,text){
+    const el = $('backendStatus'); el.textContent = text;
+    el.className = 'pill' + (kind==='ok'?'':(' '+kind));
+  }
+
+  /* ---------------- MASTER BRAIN ROUTER ---------------- */
+  async function localBrain(text){
+    const t = text.trim(), low = t.toLowerCase();
+
+    const cmdHit = matchCustomCommand(t);
+    if(cmdHit) return { text: cmdHit, tool: 'Custom command' };
+
+    if(/^\s*(hi|hello|hey|namaste|namaskar)\b/.test(low))
+      return { text: (mem.prefs.name ? `Hello ${mem.prefs.name}. ` : 'Hello. ') + 'Master brain is online and ready.', tool: null };
+
+    if(/\b(what.?s the )?time\b|\bdate\b|\btoday\b/.test(low) && !/weather/.test(low))
+      return { text: 'Local time is ' + new Date().toLocaleString() + '.', tool: 'Date/Time' };
+
+    const cm = t.match(/(?:calculate|calc|solve)\s+(.+)/i);
+    if(cm){ try{ return { text: 'Result: ' + calc(cm[1]), tool: 'Calculator' }; }catch(e){ return { text: e.message, tool: 'Calculator' }; } }
+
+    const noteReply = notesTool(t);
+    if(noteReply !== null) return { text: noteReply, tool: 'Notes' };
+
+    const wm = t.match(/^(?:open|go to)\s+(https?:\/\/\S+|[\w.-]+\.[a-z]{2,}(?:\/\S*)?)/i);
+    if(wm) return { text: await openWebsite(wm[1]), tool: 'Open website' };
+
+    const sm = t.match(/^(?:search(?: for)?|google)\s+(.+)/i);
+    if(sm) return { text: webSearch(sm[1]), tool: 'Web search' };
+
+    const mm = t.match(/^(?:map|maps|directions to|navigate to)\s*(.*)/i);
+    if(mm) return { text: await openMaps(mm[1].trim()), tool: 'Maps' };
+
+    const wtm = t.match(/weather(?: in| at| for)?\s+(.+)/i);
+    if(wtm) return { text: await weatherTool(wtm[1].trim()), tool: 'Weather' };
+    if(/^weather$/i.test(low)) return { text: 'Which city\'s weather would you like?', tool: null };
+
+    if(/\bmy name is\s+(.+)/i.test(t)){
+      const n = t.match(/\bmy name is\s+(.+)/i)[1].trim();
+      mem.prefs.name = n; saveMem();
+      return { text: 'Got it, I\'ll remember you as ' + n + '.', tool: 'Preferences' };
+    }
+
+    if(/\bclear (chat|conversation)\b/i.test(t)){
+      clearChatView();
+      return { text: 'Chat view cleared. Long-term memory kept — use Settings to wipe it.', tool: 'Memory' };
+    }
+
+    if(/\b(help|commands)\b/.test(low))
+      return { text: 'I can calculate, tell time/date, open approved sites, search the web, open maps, check weather, keep notes, run custom commands, or just chat naturally — ask me anything.', tool: null };
+
+    return null; // fall through to Gemini
+  }
+
+  function clearChatView(){
+    while(log.children.length>0) log.lastChild.remove();
+    add('s', null, 'SYSTEM: Chat view cleared.');
+  }
+
+  /* ---------------- GEMINI (via backend) WITH TOOL CHAINING ---------------- */
+  async function askGemini(text){
+    const payload = {
+      action: 'chat',
+      messages: mem.history.map(h=>({role:h.role, content:h.content})).concat([{role:'user', content:text}]),
+      context: {
+        userName: mem.prefs.name || null,
+        notes: mem.notes,
+        language: mem.prefs.language
+      }
+    };
+    addTool('Routing to Gemini brain…');
+    const data = await backendCall(payload);
+    if(data.error) throw new Error(data.error);
+    let reply = data.reply || 'No usable reply returned.';
+
+    // Tool-chaining: Gemini can ask for a tool via TOOL_REQUEST:weather:<city>
+    const toolReq = reply.match(/TOOL_REQUEST:weather:(.+)/i);
+    if(toolReq){
+      const city = toolReq[1].trim();
+      addTool('Gemini requested the Weather tool for "'+city+'" — chaining…');
+      const weatherResult = await weatherTool(city);
+      const followup = await backendCall({
+        action: 'chat',
+        messages: payload.messages.concat([
+          { role:'assistant', content: reply },
+          { role:'user', content: '[Weather tool result]: ' + weatherResult + '\nNow answer the original question naturally, in JARVIS style.' }
+        ]),
+        context: payload.context
+      });
+      if(followup.error) throw new Error(followup.error);
+      reply = followup.reply || weatherResult;
+    }
+    return reply;
+  }
+
+  /* ---------------- MAIN ENTRY ---------------- */
+  async function ask(text){
+    if(!text.trim()) return;
+    add('u', 'YOU', text);
+    pushHistory('user', text);
+    setStatus('THINKING', 'Routing through the master brain…');
+    $('brain').textContent = 'THINKING'; $('brain').className='pill warn';
+
+    try{
+      const local = await localBrain(text);
+      if(local){
+        if(local.tool) addTool('Tool used: ' + local.tool);
+        add('a', 'JARVIS', local.text);
+        pushHistory('assistant', local.text);
+        setStatus('STANDING BY', local.tool ? 'Tool action completed.' : 'Ready.');
+        $('brain').textContent = 'READY'; $('brain').className='pill';
+        say(local.text);
+        return;
+      }
+      const reply = await askGemini(text);
+      add('a', 'JARVIS', reply);
+      pushHistory('assistant', reply);
+      setStatus('STANDING BY', 'Answer received from Gemini.');
+      $('brain').textContent = 'READY'; $('brain').className='pill';
+      setBackendPill('ok','CONNECTED');
+      say(reply);
+    }catch(e){
+      const msg = 'Backend/AI error: ' + e.message;
+      add('s', 'SYSTEM', msg);
+      setStatus('BACKEND ISSUE', 'Local tools still work — see message above.');
+      $('brain').textContent = 'LOCAL ONLY'; $('brain').className='pill err';
+      setBackendPill('err','ERROR');
+    }
+  }
+
+  /* ---------------- WIRE UP UI ---------------- */
+  $('send').onclick = ()=>{ const v = input.value; input.value=''; ask(v); };
+  input.onkeydown = e=>{ if(e.key==='Enter') $('send').click(); };
+  $('speakBtn').onclick = ()=>{ speaking = !speaking; $('speakBtn').textContent = speaking ? '🔊 Voice' : '🔇 Voice'; $('speakBtn').classList.toggle('on', speaking); };
+  $('speakBtn').classList.add('on');
+
+  $('settingsBtn').onclick = ()=>{
+    $('backendUrlDisplay').textContent = BACKEND_URL;
+    $('langSelect').value = mem.prefs.language;
+    $('userName').value = mem.prefs.name;
+    renderNotes(); renderCommands();
+    $('settingsOverlay').classList.add('show');
+  };
+  $('closeSettings').onclick = ()=> $('settingsOverlay').classList.remove('show');
+  $('langSelect').onchange = e=>{ mem.prefs.language = e.target.value; saveMem(); };
+  $('userName').onchange = e=>{ mem.prefs.name = e.target.value.trim(); saveMem(); };
+  $('addNoteBtn').onclick = ()=>{ const v=$('noteInput').value.trim(); if(!v) return; mem.notes.push(v); $('noteInput').value=''; saveMem(); renderNotes(); };
+  $('addCmdBtn').onclick = ()=>{
+    const trig=$('cmdTrigger').value.trim(), resp=$('cmdResponse').value.trim();
+    if(!trig||!resp) return;
+    mem.customCommands.push({trigger:trig, response:resp});
+    $('cmdTrigger').value=''; $('cmdResponse').value='';
+    saveMem(); renderCommands();
+  };
+  $('testBackendBtn').onclick = testBackend;
+
+  $('exportBtn').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(mem, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'jarvis_memory_export.json'; a.click();
+  };
+  $('importFile').onchange = (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const imported = JSON.parse(reader.result);
+        mem = Object.assign(defaultMem(), imported);
+        saveMem(); renderNotes(); renderCommands();
+        addTool('Memory imported successfully.');
+      }catch(err){ addTool('Import failed: invalid JSON file.'); }
+    };
+    reader.readAsText(f);
+  };
+  $('wipeBtn').onclick = async ()=>{
+    const ok = await confirmAction('Wipe all memory?', 'This permanently deletes conversation history, notes, custom commands and preferences from this browser. This cannot be undone.');
+    if(!ok) return;
+    mem = defaultMem(); saveMem(); renderNotes(); renderCommands();
+    clearChatView();
+    addTool('All long-term memory wiped.');
+  };
+
+  // click outside modal closes it
+  [['settingsOverlay'],['confirmOverlay']].forEach(([id])=>{
+    $(id).addEventListener('click', e=>{ if(e.target.id===id) $(id).classList.remove('show'); });
+  });
+
+  /* ---------------- INIT ---------------- */
+  $('toolCount').textContent = '9 ENABLED';
+  saveMem();
+  testBackend();
+})();
+</script>
+</body>
+</html>
